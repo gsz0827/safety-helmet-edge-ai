@@ -1,0 +1,30 @@
+# Virtual environment
+venv/
+.env/
+
+# Python
+__pycache__/
+*.pyc
+
+# YOLOv8 training outputs
+runs/
+weights/
+*.pt
+
+# Dataset (optional but suggested)
+dataset/
+data/
+datasets/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Cache
+*.cache
