@@ -7,7 +7,8 @@ OUT_LABELS = 'dataset/yolo_labels'
 
 os.makedirs(OUT_LABELS, exist_ok=True)
 
-# 0 = helmet, 1 = no helmet
+# ✔ Classes you want to detect
+# 0 = helmet, 1 = no helmet (head)
 classes = {"helmet": 0, "head": 1}
 
 for xml_file in os.listdir(ANN_DIR):
@@ -29,6 +30,12 @@ for xml_file in os.listdir(ANN_DIR):
     with open(txt_path, "w") as f:
         for obj in root.findall("object"):
             name = obj.find("name").text
+
+          
+            if name not in classes:
+                print(f"Skipping unknown label: {name} in {xml_file}")
+                continue
+
             cls = classes[name]
 
             bbox = obj.find("bndbox")
@@ -37,11 +44,13 @@ for xml_file in os.listdir(ANN_DIR):
             xmax = int(bbox.find("xmax").text)
             ymax = int(bbox.find("ymax").text)
 
+            # YOLO FORMAT
             x_center = (xmin + xmax) / 2 / img_w
             y_center = (ymin + ymax) / 2 / img_h
             width = (xmax - xmin) / img_w
             height = (ymax - ymin) / img_h
 
+            # Write YOLO Label
             f.write(f"{cls} {x_center} {y_center} {width} {height}\n")
 
 print("✅ YOLO labels successfully generated!")
