@@ -1,0 +1,48 @@
+device:
+  device_id: edge_ai_001
+
+model:
+  model_path: runs/detect/helmet_final/weights/best.onnx
+  input_size: 640
+  class_names:
+    - helmet
+    - no_helmet
+
+video:
+  video_url: http://192.168.1.107:4747/mjpegfeed
+
+detect:
+  conf_threshold: 0.5
+  iou_threshold: 0.45
+
+alarm:
+  alarm_class_name: no_helmet
+  alarm_cooldown: 5
+  alarm_dir: alarm_results
+  alarm_log_file: alarm_log.jsonl
+
+mqtt:
+  enable: true
+  broker_host: broker.emqx.io
+  broker_port: 1883
+  topic: edge_ai/miaoqinfang/device001/alarm
+
+dashboard:
+  host: 127.0.0.1
+  port: 5000
+
+database:
+  enable: true
+  db_path: alarm_records.db
+
+alarm:
+  alarm_class_name: no_helmet
+  alarm_cooldown: 5
+  alarm_confirm_frames: 2
+  alarm_dir: alarm_results
+  alarm_log_file: alarm_log.jsonl
+
+dashboard:
+  host: 0.0.0.0
+  port: 5000
+  auto_refresh_seconds: 5

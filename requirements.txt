@@ -4,3 +4,8 @@ numpy
 PyYAML
 matplotlib
 tqdm
+scikit-learn
+paho-mqtt
+onnx
+onnxruntime
+flask

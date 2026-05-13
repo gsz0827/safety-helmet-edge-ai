@@ -1,30 +1,43 @@
-# Virtual environment
-venv/
-.env/
-
 # Python
 __pycache__/
 *.pyc
-
-# YOLOv8 training outputs
-runs/
-weights/
-*.pt
-
-# Dataset (optional but suggested)
-dataset/
-data/
-datasets/
-
-# Jupyter
-.ipynb_checkpoints/
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Logs
+*.pyo
+*.pyd
+*.pdb
+*.egg
+*.egg-info/
+dist/
+build/
 *.log
 
-# Cache
-*.cache
+# Virtual environment
+venv/
+.env/
+env/
+ENV/
+
+# ONNX / PyTorch / TensorRT 模型文件
+*.onnx
+*.pt
+*.trt
+*.engine
+
+# Data & outputs
+data/
+datasets/
+outputs/
+results/
+*.mp4
+*.avi
+*.jpg
+*.png
+
+# IDE / Editor
+.vscode/
+.idea/
+.DS_Store
+
+# Logs / temporary files
+*.log
+*.tmp
+*.bak
