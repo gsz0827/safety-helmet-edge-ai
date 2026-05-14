@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>监控页面</title>
+</head>
+<body>
+<h3>多摄像头监控</h3>
+{% for cam_id in cam_ids %}
+<div>
+    <h4>{{ cam_id }}</h4>
+    <img src="/camera/{{ cam_id }}" width="320" height="240">
+</div>
+{% endfor %}
+</body>
+</html>
