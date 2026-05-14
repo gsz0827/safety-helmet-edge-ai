@@ -21,13 +21,13 @@ video:
       enabled: false
 
 detect:
-  conf_threshold: 0.5
+  conf_threshold: 0.25
   iou_threshold: 0.45
 
 alarm:
   alarm_class_name: no_helmet
-  alarm_cooldown: 5
-  alarm_confirm_frames: 2
+  alarm_cooldown: 3
+  alarm_confirm_frames: 1
   alarm_dir: alarm_results
   alarm_log_file: alarm_log.jsonl
 
