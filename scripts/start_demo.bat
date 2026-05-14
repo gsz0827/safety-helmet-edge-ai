@@ -1,5 +1,6 @@
 @echo off
-cd /d D:\edge_ai_projects\YOLOV8-safety-helmet-detection
+REM 切换到批处理文件所在目录（项目根目录）
+cd /d %~dp0
 
 start "MQTT Subscriber" cmd /k ".\venv\Scripts\python.exe mqtt_subscriber.py"
 

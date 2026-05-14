@@ -9,7 +9,16 @@ model:
     - no_helmet
 
 video:
-  video_url: http://192.168.1.107:4747/mjpegfeed
+  streams:
+    - camera_id: cam_01
+      camera_name: entrance
+      url: http://192.168.1.124:4747/mjpegfeed
+      enabled: true
+
+    - camera_id: cam_02
+      camera_name: workshop
+      url: rtsp://user:password@192.168.1.120:554/stream1
+      enabled: false
 
 detect:
   conf_threshold: 0.5
@@ -18,6 +27,7 @@ detect:
 alarm:
   alarm_class_name: no_helmet
   alarm_cooldown: 5
+  alarm_confirm_frames: 2
   alarm_dir: alarm_results
   alarm_log_file: alarm_log.jsonl
 
@@ -28,21 +38,10 @@ mqtt:
   topic: edge_ai/miaoqinfang/device001/alarm
 
 dashboard:
-  host: 127.0.0.1
+  host: 0.0.0.0
   port: 5000
+  auto_refresh_seconds: 5
 
 database:
   enable: true
   db_path: alarm_records.db
-
-alarm:
-  alarm_class_name: no_helmet
-  alarm_cooldown: 5
-  alarm_confirm_frames: 2
-  alarm_dir: alarm_results
-  alarm_log_file: alarm_log.jsonl
-
-dashboard:
-  host: 0.0.0.0
-  port: 5000
-  auto_refresh_seconds: 5

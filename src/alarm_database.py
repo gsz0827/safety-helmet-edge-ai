@@ -5,7 +5,6 @@ from datetime import datetime
 class AlarmDatabase:
     def __init__(self, config):
         db_config = config.get("database", {})
-
         self.enable = db_config.get("enable", True)
         self.db_path = db_config.get("db_path", "alarm_records.db")
 
@@ -18,17 +17,21 @@ class AlarmDatabase:
     def init_database(self):
         with self.get_connection() as conn:
             cursor = conn.cursor()
-
             cursor.execute(
                 """
                 CREATE TABLE IF NOT EXISTS alarm_records (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     device_id TEXT,
+                    camera_id TEXT,
+                    camera_name TEXT,
+                    source_url TEXT,
                     model_type TEXT,
                     event TEXT,
                     confidence REAL,
                     image_path TEXT,
                     timestamp TEXT,
+                    inference_time_ms REAL,
+                    fps REAL,
                     created_at TEXT,
                     status TEXT DEFAULT 'pending',
                     handled_at TEXT,
@@ -37,13 +40,36 @@ class AlarmDatabase:
                 )
                 """
             )
-
             conn.commit()
 
-        # 表创建完成后，再检查旧数据库是否缺少新字段
         self.ensure_columns()
-
         print(f"告警数据库已初始化: {self.db_path}")
+
+    def ensure_columns(self):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("PRAGMA table_info(alarm_records)")
+            existing_columns = [row[1] for row in cursor.fetchall()]
+
+            new_columns = {
+                "camera_id": "TEXT",
+                "camera_name": "TEXT",
+                "source_url": "TEXT",
+                "inference_time_ms": "REAL",
+                "fps": "REAL",
+                "status": "TEXT DEFAULT 'pending'",
+                "handled_at": "TEXT",
+                "handler": "TEXT",
+                "remark": "TEXT",
+            }
+
+            for column_name, column_type in new_columns.items():
+                if column_name not in existing_columns:
+                    cursor.execute(
+                        f"ALTER TABLE alarm_records ADD COLUMN {column_name} {column_type}"
+                    )
+
+            conn.commit()
 
     def insert_alarm(self, alarm_info):
         if not self.enable:
@@ -51,33 +77,41 @@ class AlarmDatabase:
 
         with self.get_connection() as conn:
             cursor = conn.cursor()
-
             cursor.execute(
                 """
                 INSERT INTO alarm_records (
                     device_id,
+                    camera_id,
+                    camera_name,
+                    source_url,
                     model_type,
                     event,
                     confidence,
                     image_path,
                     timestamp,
+                    inference_time_ms,
+                    fps,
                     created_at,
                     status
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     alarm_info.get("device_id", ""),
+                    alarm_info.get("camera_id", ""),
+                    alarm_info.get("camera_name", ""),
+                    alarm_info.get("source_url", ""),
                     alarm_info.get("model_type", ""),
                     alarm_info.get("event", ""),
                     alarm_info.get("confidence", 0.0),
                     alarm_info.get("image_path", ""),
                     alarm_info.get("timestamp", ""),
+                    alarm_info.get("inference_time_ms", 0.0),
+                    alarm_info.get("fps", 0.0),
                     datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    "pending"
-                )
+                    "pending",
+                ),
             )
-
             conn.commit()
 
     def get_recent_alarms(self, limit=100):
@@ -87,28 +121,31 @@ class AlarmDatabase:
         with self.get_connection() as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-
             cursor.execute(
                 """
                 SELECT
                     id,
                     device_id,
+                    camera_id,
+                    camera_name,
+                    source_url,
                     model_type,
                     event,
                     confidence,
                     image_path,
                     timestamp,
-                    created_at
+                    inference_time_ms,
+                    fps,
+                    created_at,
+                    status
                 FROM alarm_records
                 ORDER BY id DESC
                 LIMIT ?
                 """,
-                (limit,)
+                (limit,),
             )
-
             rows = cursor.fetchall()
-
-        return [dict(row) for row in rows]
+            return [dict(row) for row in rows]
 
     def count_alarms(self):
         if not self.enable:
@@ -117,11 +154,17 @@ class AlarmDatabase:
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT COUNT(*) FROM alarm_records")
-            count = cursor.fetchone()[0]
+            return cursor.fetchone()[0]
 
-        return count
-    
-    def get_alarms_filtered(self, event="", model_type="", status="", min_conf=None, limit=100):
+    def get_alarms_filtered(
+        self,
+        event="",
+        model_type="",
+        status="",
+        camera_id="",
+        min_conf=None,
+        limit=100,
+    ):
         if not self.enable:
             return []
 
@@ -129,11 +172,16 @@ class AlarmDatabase:
             SELECT
                 id,
                 device_id,
+                camera_id,
+                camera_name,
+                source_url,
                 model_type,
                 event,
                 confidence,
                 image_path,
                 timestamp,
+                inference_time_ms,
+                fps,
                 created_at,
                 status,
                 handled_at,
@@ -142,7 +190,6 @@ class AlarmDatabase:
             FROM alarm_records
             WHERE 1 = 1
         """
-
         params = []
 
         if event:
@@ -157,6 +204,10 @@ class AlarmDatabase:
             query += " AND status = ?"
             params.append(status)
 
+        if camera_id:
+            query += " AND camera_id = ?"
+            params.append(camera_id)
+
         if min_conf is not None:
             query += " AND confidence >= ?"
             params.append(min_conf)
@@ -169,8 +220,7 @@ class AlarmDatabase:
             cursor = conn.cursor()
             cursor.execute(query, params)
             rows = cursor.fetchall()
-
-        return [dict(row) for row in rows]
+            return [dict(row) for row in rows]
 
     def get_summary(self):
         if not self.enable:
@@ -180,7 +230,8 @@ class AlarmDatabase:
                 "pending_count": 0,
                 "handled_count": 0,
                 "avg_confidence": 0,
-                "latest_time": ""
+                "latest_time": "",
+                "camera_count": 0,
             }
 
         with self.get_connection() as conn:
@@ -215,9 +266,17 @@ class AlarmDatabase:
                 LIMIT 1
                 """
             )
-
             row = cursor.fetchone()
             latest_time = row[0] if row else ""
+
+            cursor.execute(
+                """
+                SELECT COUNT(DISTINCT camera_id)
+                FROM alarm_records
+                WHERE camera_id IS NOT NULL AND camera_id != ''
+                """
+            )
+            camera_count = cursor.fetchone()[0]
 
             return {
                 "total_count": total_count,
@@ -225,7 +284,8 @@ class AlarmDatabase:
                 "pending_count": pending_count,
                 "handled_count": handled_count,
                 "avg_confidence": round(avg_confidence or 0, 4),
-                "latest_time": latest_time
+                "latest_time": latest_time,
+                "camera_count": camera_count,
             }
 
     def get_daily_counts(self, days=7):
@@ -234,20 +294,16 @@ class AlarmDatabase:
 
         with self.get_connection() as conn:
             cursor = conn.cursor()
-
             cursor.execute(
                 """
-                SELECT
-                    date(timestamp) AS alarm_date,
-                    COUNT(*) AS alarm_count
+                SELECT date(timestamp) AS alarm_date, COUNT(*) AS alarm_count
                 FROM alarm_records
                 WHERE date(timestamp) >= date('now', 'localtime', ?)
                 GROUP BY date(timestamp)
                 ORDER BY alarm_date ASC
                 """,
-                (f"-{days - 1} days",)
+                (f"-{days - 1} days",),
             )
-
             rows = cursor.fetchall()
 
         count_map = {row[0]: row[1] for row in rows}
@@ -260,35 +316,35 @@ class AlarmDatabase:
         for i in range(days - 1, -1, -1):
             day = today - timedelta(days=i)
             day_str = day.strftime("%Y-%m-%d")
-
-            result.append({
-                "date": day_str,
-                "count": count_map.get(day_str, 0)
-            })
+            result.append(
+                {
+                    "date": day_str,
+                    "count": count_map.get(day_str, 0),
+                }
+            )
 
         return result
 
-    def ensure_columns(self):
+    def get_camera_counts(self):
+        if not self.enable:
+            return []
+
         with self.get_connection() as conn:
+            conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-
-            cursor.execute("PRAGMA table_info(alarm_records)")
-            existing_columns = [row[1] for row in cursor.fetchall()]
-
-            new_columns = {
-                "status": "TEXT DEFAULT 'pending'",
-                "handled_at": "TEXT",
-                "handler": "TEXT",
-                "remark": "TEXT"
-            }
-
-            for column_name, column_type in new_columns.items():
-                if column_name not in existing_columns:
-                    cursor.execute(
-                        f"ALTER TABLE alarm_records ADD COLUMN {column_name} {column_type}"
-                    )
-
-            conn.commit()
+            cursor.execute(
+                """
+                SELECT
+                    camera_id,
+                    camera_name,
+                    COUNT(*) AS alarm_count
+                FROM alarm_records
+                GROUP BY camera_id, camera_name
+                ORDER BY alarm_count DESC
+                """
+            )
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
 
     def handle_alarm(self, alarm_id, handler="admin", remark=""):
         if not self.enable:
@@ -296,15 +352,10 @@ class AlarmDatabase:
 
         with self.get_connection() as conn:
             cursor = conn.cursor()
-
             cursor.execute(
                 """
                 UPDATE alarm_records
-                SET
-                    status = ?,
-                    handled_at = ?,
-                    handler = ?,
-                    remark = ?
+                SET status = ?, handled_at = ?, handler = ?, remark = ?
                 WHERE id = ?
                 """,
                 (
@@ -312,12 +363,10 @@ class AlarmDatabase:
                     datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     handler,
                     remark,
-                    alarm_id
-                )
+                    alarm_id,
+                ),
             )
-
             conn.commit()
-
             return cursor.rowcount > 0
 
     def mark_pending(self, alarm_id):
@@ -326,22 +375,18 @@ class AlarmDatabase:
 
         with self.get_connection() as conn:
             cursor = conn.cursor()
-
             cursor.execute(
                 """
                 UPDATE alarm_records
-                SET
-                    status = 'pending',
+                SET status = 'pending',
                     handled_at = NULL,
                     handler = NULL,
                     remark = NULL
                 WHERE id = ?
                 """,
-                (alarm_id,)
+                (alarm_id,),
             )
-
             conn.commit()
-
             return cursor.rowcount > 0
 
     def get_alarm_by_id(self, alarm_id):
@@ -351,17 +396,21 @@ class AlarmDatabase:
         with self.get_connection() as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-
             cursor.execute(
                 """
                 SELECT
                     id,
                     device_id,
+                    camera_id,
+                    camera_name,
+                    source_url,
                     model_type,
                     event,
                     confidence,
                     image_path,
                     timestamp,
+                    inference_time_ms,
+                    fps,
                     created_at,
                     status,
                     handled_at,
@@ -370,12 +419,11 @@ class AlarmDatabase:
                 FROM alarm_records
                 WHERE id = ?
                 """,
-                (alarm_id,)
+                (alarm_id,),
             )
-
             row = cursor.fetchone()
 
-        if row is None:
-            return None
+            if row is None:
+                return None
 
-        return dict(row)
+            return dict(row)
