@@ -55,7 +55,7 @@ def load_config():
     print("\n===== 2. 检查 config.yaml =====")
 
     try:
-        from src.config_loader import load_config
+        from edge.config_loader import load_config
         config = load_config(CONFIG_PATH)
         print_ok(f"config.yaml 读取成功: {CONFIG_PATH}")
     except Exception as e:
@@ -213,7 +213,7 @@ def check_database(config):
     print("\n===== 8. 检查 SQLite 告警数据库 =====")
 
     try:
-        from src.alarm_database import AlarmDatabase
+        from edge.alarm_database import AlarmDatabase
 
         db = AlarmDatabase(config)
         count = db.count_alarms()

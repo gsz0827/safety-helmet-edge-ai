@@ -1,8 +1,8 @@
 import cv2
 import numpy as np
-from src.config_loader import load_config
-from src.mqtt_publisher import MqttPublisher
-from src.alarm_manager import AlarmManager
+from edge.config_loader import load_config
+from edge.mqtt_publisher import MqttPublisher
+from edge.alarm_manager import AlarmManager
 
 
 config = load_config("config.yaml")

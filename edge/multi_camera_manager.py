@@ -1,4 +1,4 @@
-from src.camera_stream import CameraStream
+from edge.camera_stream import CameraStream
 
 
 class MultiCameraManager:

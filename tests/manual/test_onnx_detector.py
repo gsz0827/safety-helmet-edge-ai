@@ -1,7 +1,7 @@
 import cv2
 import time
-from src.config_loader import load_config
-from src.onnx_detector import OnnxDetector
+from edge.config_loader import load_config
+from edge.onnx_detector import OnnxDetector
 
 
 def draw_detections(frame, detections):

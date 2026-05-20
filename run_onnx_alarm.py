@@ -1,12 +1,12 @@
 import time
 
-from src.config_loader import load_config
-from src.multi_camera_manager import MultiCameraManager
-from src.onnx_detector import OnnxDetector
-from src.mqtt_publisher import MqttPublisher
-from src.alarm_manager import AlarmManager
-from src.alarm_database import AlarmDatabase
-from src.visualizer import Visualizer
+from edge.config_loader import load_config
+from edge.multi_camera_manager import MultiCameraManager
+from edge.onnx_detector import OnnxDetector
+from edge.mqtt_publisher import MqttPublisher
+from edge.alarm_manager import AlarmManager
+from edge.alarm_database import AlarmDatabase
+from edge.visualizer import Visualizer
 
 
 def main():

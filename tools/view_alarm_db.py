@@ -6,8 +6,8 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from src.config_loader import load_config
-from src.alarm_database import AlarmDatabase
+from edge.config_loader import load_config
+from edge.alarm_database import AlarmDatabase
 
 
 def main():

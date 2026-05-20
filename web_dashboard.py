@@ -22,11 +22,11 @@ from flask import (
     stream_with_context,
 )
 
-from src.config_loader import load_config
-from src.alarm_database import AlarmDatabase
-from src.onnx_detector import OnnxDetector
-from src.alarm_manager import AlarmManager
-from src.mqtt_publisher import MqttPublisher
+from edge.config_loader import load_config
+from edge.alarm_database import AlarmDatabase
+from edge.onnx_detector import OnnxDetector
+from edge.alarm_manager import AlarmManager
+from edge.mqtt_publisher import MqttPublisher
 
 
 config = load_config("config.yaml")

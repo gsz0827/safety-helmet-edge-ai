@@ -1,7 +1,7 @@
 import json
 import uuid
 import paho.mqtt.client as mqtt
-from src.config_loader import load_config
+from edge.config_loader import load_config
 
 
 config = load_config("config.yaml")

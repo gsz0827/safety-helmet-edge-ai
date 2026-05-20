@@ -1,6 +1,6 @@
 import time
-from src.config_loader import load_config
-from src.mqtt_publisher import MqttPublisher
+from edge.config_loader import load_config
+from edge.mqtt_publisher import MqttPublisher
 
 
 config = load_config("config.yaml")
