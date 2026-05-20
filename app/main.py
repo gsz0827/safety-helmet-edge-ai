@@ -1,6 +1,8 @@
 ﻿from fastapi import FastAPI
 
 from app.api.routes_alarms import router as alarms_router
+from app.api.routes_cameras import router as cameras_router
+from app.api.routes_devices import router as devices_router
 from app.api.routes_inference import router as inference_router
 from app.core.config import settings
 from app.db.init_db import init_db
@@ -12,6 +14,8 @@ app = FastAPI(
 )
 
 app.include_router(inference_router)
+app.include_router(devices_router)
+app.include_router(cameras_router)
 app.include_router(alarms_router)
 
 
