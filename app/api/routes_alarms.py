@@ -1,4 +1,4 @@
-﻿from datetime import datetime
+﻿from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
@@ -14,6 +14,8 @@ from app.schemas.alarm import (
     AlarmListData,
     AlarmListResponse,
     AlarmOut,
+    AlarmStatisticsData,
+    AlarmStatisticsResponse,
 )
 from app.schemas.common import ApiResponse
 
@@ -78,6 +80,80 @@ def list_alarms(
     )
 
     return ApiResponse[AlarmListData](
+        code=0,
+        message="success",
+        data=data,
+    )
+
+
+@router.get("/statistics", response_model=AlarmStatisticsResponse)
+def get_alarm_statistics(
+    latest_limit: int = Query(default=5, ge=1, le=20),
+    db: Session = Depends(get_db),
+):
+    total = db.scalar(
+        select(func.count()).select_from(Alarm)
+    ) or 0
+
+    pending = db.scalar(
+        select(func.count()).select_from(Alarm).where(Alarm.status == "pending")
+    ) or 0
+
+    handled = db.scalar(
+        select(func.count()).select_from(Alarm).where(Alarm.status == "handled")
+    ) or 0
+
+    since_24h = datetime.utcnow() - timedelta(hours=24)
+
+    recent_24h = db.scalar(
+        select(func.count()).select_from(Alarm).where(Alarm.created_at >= since_24h)
+    ) or 0
+
+    status_rows = db.execute(
+        select(Alarm.status, func.count(Alarm.id)).group_by(Alarm.status)
+    ).all()
+
+    event_type_rows = db.execute(
+        select(Alarm.event_type, func.count(Alarm.id)).group_by(Alarm.event_type)
+    ).all()
+
+    camera_rows = db.execute(
+        select(Alarm.camera_id, func.count(Alarm.id)).group_by(Alarm.camera_id)
+    ).all()
+
+    latest_alarms = db.scalars(
+        select(Alarm)
+        .order_by(Alarm.created_at.desc())
+        .limit(latest_limit)
+    ).all()
+
+    data = AlarmStatisticsData(
+        total=total,
+        pending=pending,
+        handled=handled,
+        recent_24h=recent_24h,
+        by_status={
+            str(status): count
+            for status, count in status_rows
+            if status is not None
+        },
+        by_event_type={
+            str(event_type): count
+            for event_type, count in event_type_rows
+            if event_type is not None
+        },
+        by_camera_id={
+            str(camera_id): count
+            for camera_id, count in camera_rows
+            if camera_id is not None
+        },
+        latest_alarms=[
+            AlarmOut.model_validate(alarm)
+            for alarm in latest_alarms
+        ],
+    )
+
+    return ApiResponse[AlarmStatisticsData](
         code=0,
         message="success",
         data=data,

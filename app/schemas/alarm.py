@@ -44,6 +44,17 @@ class AlarmListData(BaseModel):
     items: list[AlarmOut]
 
 
+class AlarmStatisticsData(BaseModel):
+    total: int
+    pending: int
+    handled: int
+    recent_24h: int
+    by_status: dict[str, int]
+    by_event_type: dict[str, int]
+    by_camera_id: dict[str, int]
+    latest_alarms: list[AlarmOut]
+
+
 class AlarmHandleRequest(BaseModel):
     handler: str = Field(default="admin", examples=["admin"])
     remark: str | None = Field(default=None, examples=["已通知现场负责人处理"])
@@ -58,4 +69,8 @@ class AlarmDetailResponse(ApiResponse[AlarmOut]):
 
 
 class AlarmListResponse(ApiResponse[AlarmListData]):
+    pass
+
+
+class AlarmStatisticsResponse(ApiResponse[AlarmStatisticsData]):
     pass
