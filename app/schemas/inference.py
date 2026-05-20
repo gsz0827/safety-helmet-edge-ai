@@ -12,6 +12,9 @@ class ImageInferenceData(BaseModel):
     detections: list[dict[str, Any]] = Field(default_factory=list)
     inference_time_ms: float | None = None
 
+    alarm_created: bool = False
+    alarm_id: int | None = None
+
 
 class ImageInferenceResponse(ApiResponse[ImageInferenceData]):
     pass
