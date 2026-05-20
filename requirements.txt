@@ -9,3 +9,6 @@ paho-mqtt
 onnx
 onnxruntime
 flask
+fastapi
+uvicorn[standard]
+python-multipart
