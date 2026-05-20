@@ -1,14 +1,39 @@
 ﻿import cv2
 import numpy as np
 
+from app.core.config import settings
 from edge.config_loader import load_config
 from edge.onnx_detector import OnnxDetector
 
 
 class InferenceService:
-    def __init__(self, config_path: str = "config.yaml"):
-        self.config = load_config(config_path)
+    def __init__(self):
+        self.config = load_config(settings.edge_config_path)
+        self._apply_settings_overrides()
         self.detector = OnnxDetector(self.config)
+
+    def _apply_settings_overrides(self):
+        self.config.setdefault("model", {})
+        self.config.setdefault("detect", {})
+
+        if settings.model_path:
+            self.config["model"]["model_path"] = settings.model_path
+
+        if settings.model_input_size:
+            self.config["model"]["input_size"] = settings.model_input_size
+
+        if settings.model_class_names:
+            self.config["model"]["class_names"] = [
+                name.strip()
+                for name in settings.model_class_names.split(",")
+                if name.strip()
+            ]
+
+        if settings.detect_conf_threshold is not None:
+            self.config["detect"]["conf_threshold"] = settings.detect_conf_threshold
+
+        if settings.detect_iou_threshold is not None:
+            self.config["detect"]["iou_threshold"] = settings.detect_iou_threshold
 
     def detect_image_bytes(self, image_bytes: bytes):
         np_array = np.frombuffer(image_bytes, np.uint8)

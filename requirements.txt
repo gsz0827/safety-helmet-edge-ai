@@ -12,3 +12,4 @@ flask
 fastapi
 uvicorn[standard]
 python-multipart
+pydantic-settings
