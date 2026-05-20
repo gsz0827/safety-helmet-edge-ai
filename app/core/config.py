@@ -8,6 +8,8 @@ class Settings(BaseSettings):
 
     edge_config_path: str = "config.yaml"
 
+    database_url: str = "sqlite:///./storage/app.db"
+
     model_path: str | None = None
     model_input_size: int | None = None
     model_class_names: str | None = None
