@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.core.metrics import ALARM_CREATED_TOTAL
 from app.db.models import Alarm
 from app.db.session import get_db
 from app.schemas.alarm import (
@@ -32,6 +33,11 @@ def create_alarm(payload: AlarmCreate, db: Session = Depends(get_db)):
     db.add(alarm)
     db.commit()
     db.refresh(alarm)
+
+    ALARM_CREATED_TOTAL.labels(
+        source="api",
+        event_type=payload.event_type,
+    ).inc()
 
     return ApiResponse[AlarmOut](
         code=0,

@@ -14,3 +14,4 @@ uvicorn[standard]
 python-multipart
 pydantic-settings
 sqlalchemy
+prometheus-client

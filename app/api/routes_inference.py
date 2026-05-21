@@ -1,9 +1,16 @@
 ﻿import json
+import time
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
+from app.core.metrics import (
+    AI_INFERENCE_DURATION_SECONDS,
+    AI_INFERENCE_ERRORS_TOTAL,
+    AI_INFERENCE_REQUESTS_TOTAL,
+    ALARM_CREATED_TOTAL,
+)
 from app.db.models import Alarm
 from app.db.session import get_db
 from app.schemas.common import ApiResponse
@@ -74,6 +81,9 @@ async def infer_image(
     create_alarm: bool = Form(default=True),
     db: Session = Depends(get_db),
 ):
+    AI_INFERENCE_REQUESTS_TOTAL.inc()
+    start_time = time.perf_counter()
+
     try:
         result = inference_service.detect_image_bytes(
             await file.read()
@@ -107,6 +117,11 @@ async def infer_image(
             alarm_created = True
             alarm_id = alarm.id
 
+            ALARM_CREATED_TOTAL.labels(
+                source="inference",
+                event_type="no_helmet",
+            ).inc()
+
         data = ImageInferenceData(
             filename=file.filename or "",
             image_width=result["image_width"],
@@ -124,8 +139,15 @@ async def infer_image(
         )
 
     except ValueError as exc:
+        AI_INFERENCE_ERRORS_TOTAL.inc()
         raise HTTPException(status_code=400, detail=str(exc))
 
     except Exception as exc:
+        AI_INFERENCE_ERRORS_TOTAL.inc()
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Inference failed: {exc}")
+
+    finally:
+        AI_INFERENCE_DURATION_SECONDS.observe(
+            time.perf_counter() - start_time
+        )
