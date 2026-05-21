@@ -16,5 +16,18 @@ class ImageInferenceData(BaseModel):
     alarm_id: int | None = None
 
 
+class InferenceStatusData(BaseModel):
+    model_loaded: bool
+    edge_config_path: str
+    model_path: str | None = None
+    input_size: int | None = None
+    class_names: list[str] = Field(default_factory=list)
+    load_error: str | None = None
+
+
 class ImageInferenceResponse(ApiResponse[ImageInferenceData]):
+    pass
+
+
+class InferenceStatusResponse(ApiResponse[InferenceStatusData]):
     pass

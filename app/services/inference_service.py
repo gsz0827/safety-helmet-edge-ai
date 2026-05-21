@@ -1,4 +1,5 @@
-﻿from typing import Any
+﻿from threading import Lock
+from typing import Any
 
 import cv2
 import numpy as np
@@ -10,32 +11,90 @@ from edge.onnx_detector import OnnxDetector
 
 class InferenceService:
     def __init__(self):
-        self.config = load_config(settings.edge_config_path)
-        self._apply_settings_overrides()
-        self.detector = OnnxDetector(self.config)
+        self.config_path = settings.edge_config_path
+        self.config: dict[str, Any] | None = None
+        self.detector: OnnxDetector | None = None
+        self.load_error: str | None = None
+        self._lock = Lock()
 
-    def _apply_settings_overrides(self):
-        self.config.setdefault("model", {})
-        self.config.setdefault("detect", {})
+    def _load_config_with_overrides(self) -> dict[str, Any]:
+        config = load_config(self.config_path)
+
+        config.setdefault("model", {})
+        config.setdefault("detect", {})
 
         if settings.model_path:
-            self.config["model"]["model_path"] = settings.model_path
+            config["model"]["model_path"] = settings.model_path
 
         if settings.model_input_size:
-            self.config["model"]["input_size"] = settings.model_input_size
+            config["model"]["input_size"] = settings.model_input_size
 
         if settings.model_class_names:
-            self.config["model"]["class_names"] = [
+            config["model"]["class_names"] = [
                 name.strip()
                 for name in settings.model_class_names.split(",")
                 if name.strip()
             ]
 
         if settings.detect_conf_threshold is not None:
-            self.config["detect"]["conf_threshold"] = settings.detect_conf_threshold
+            config["detect"]["conf_threshold"] = settings.detect_conf_threshold
 
         if settings.detect_iou_threshold is not None:
-            self.config["detect"]["iou_threshold"] = settings.detect_iou_threshold
+            config["detect"]["iou_threshold"] = settings.detect_iou_threshold
+
+        return config
+
+    def _ensure_config_loaded(self):
+        if self.config is None:
+            self.config = self._load_config_with_overrides()
+
+    def _ensure_detector_loaded(self):
+        if self.detector is not None:
+            return
+
+        with self._lock:
+            if self.detector is not None:
+                return
+
+            try:
+                self._ensure_config_loaded()
+                self.detector = OnnxDetector(self.config)
+                self.load_error = None
+            except Exception as exc:
+                self.load_error = str(exc)
+                raise
+
+    def get_status(self) -> dict[str, Any]:
+        try:
+            self._ensure_config_loaded()
+            model_config = self.config.get("model", {}) if self.config else {}
+
+            class_names = model_config.get("class_names") or []
+            if isinstance(class_names, str):
+                class_names = [
+                    name.strip()
+                    for name in class_names.split(",")
+                    if name.strip()
+                ]
+
+            return {
+                "model_loaded": self.detector is not None,
+                "edge_config_path": self.config_path,
+                "model_path": model_config.get("model_path"),
+                "input_size": model_config.get("input_size"),
+                "class_names": class_names,
+                "load_error": self.load_error,
+            }
+
+        except Exception as exc:
+            return {
+                "model_loaded": False,
+                "edge_config_path": self.config_path,
+                "model_path": None,
+                "input_size": None,
+                "class_names": [],
+                "load_error": str(exc),
+            }
 
     def _to_builtin(self, value: Any):
         if isinstance(value, np.generic):
@@ -59,6 +118,8 @@ class InferenceService:
         return value
 
     def detect_image_bytes(self, image_bytes: bytes):
+        self._ensure_detector_loaded()
+
         np_array = np.frombuffer(image_bytes, np.uint8)
         image = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
 

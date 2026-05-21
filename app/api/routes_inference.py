@@ -14,7 +14,12 @@ from app.core.metrics import (
 from app.db.models import Alarm
 from app.db.session import get_db
 from app.schemas.common import ApiResponse
-from app.schemas.inference import ImageInferenceData, ImageInferenceResponse
+from app.schemas.inference import (
+    ImageInferenceData,
+    ImageInferenceResponse,
+    InferenceStatusData,
+    InferenceStatusResponse,
+)
 from app.services.inference_service import inference_service
 
 router = APIRouter(
@@ -70,6 +75,19 @@ def _find_top_no_helmet_detection(
     return max(
         candidates,
         key=_get_detection_confidence,
+    )
+
+
+@router.get("/status", response_model=InferenceStatusResponse)
+def get_inference_status():
+    data = InferenceStatusData(
+        **inference_service.get_status()
+    )
+
+    return ApiResponse[InferenceStatusData](
+        code=0,
+        message="success",
+        data=data,
     )
 
 
