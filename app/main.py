@@ -1,4 +1,5 @@
 ﻿import time
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, Response
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
@@ -12,10 +13,18 @@ from app.core.config import settings
 from app.core.metrics import HTTP_REQUEST_DURATION_SECONDS, HTTP_REQUESTS_TOTAL
 from app.db.init_db import init_db
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    yield
+
+
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
     description="AI safety detection backend powered by YOLOv8 and ONNX Runtime.",
+    lifespan=lifespan,
 )
 
 app.include_router(inference_router)
@@ -47,11 +56,6 @@ async def metrics_middleware(request: Request, call_next):
     ).observe(duration)
 
     return response
-
-
-@app.on_event("startup")
-def on_startup():
-    init_db()
 
 
 @app.get("/")

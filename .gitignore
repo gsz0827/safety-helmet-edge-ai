@@ -81,3 +81,4 @@ datasets/
 .idea/
 .DS_Store
 Thumbs.dbstorage/
+tests/test_app.db

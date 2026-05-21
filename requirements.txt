@@ -15,3 +15,5 @@ python-multipart
 pydantic-settings
 sqlalchemy
 prometheus-client
+pytest
+httpx
