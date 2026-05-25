@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic-settings
+sqlalchemy
+prometheus-client
+
+numpy
+opencv-python-headless
+PyYAML
+paho-mqtt
+onnxruntime

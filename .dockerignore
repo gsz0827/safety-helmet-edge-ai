@@ -1,4 +1,5 @@
 .git
+.gitignore
 __pycache__
 *.pyc
 .pytest_cache
@@ -9,13 +10,31 @@ env
 .env
 
 dataset
+datasets
 runs
 alarm_results
+logs
+data
+storage
+
 *.db
 *.sqlite
 *.sqlite3
 *.log
 *.jsonl
+
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.jpg
+*.jpeg
+*.png
+*.bmp
+
+*.pt
+*.pth
+*.engine
 
 .vscode
 .idea
