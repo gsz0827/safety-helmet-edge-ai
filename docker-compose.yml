@@ -1,0 +1,15 @@
+services:
+  ai-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: safety-helmet-ai-backend:0.1
+    container_name: safety-helmet-ai-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=dev
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+    restart: unless-stopped
