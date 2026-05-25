@@ -1,5 +1,29 @@
 # Safety Helmet Edge AI Backend
 
+## System Architecture
+
+```mermaid
+flowchart TD
+    A[Camera / Image Input] --> B[Edge AI Inference Module]
+    B --> C[ONNX Runtime Detector]
+    C --> D[FastAPI Backend]
+
+    D --> E[Inference API]
+    D --> F[Device Management API]
+    D --> G[Camera Management API]
+    D --> H[Alarm Management API]
+    D --> I[Model Management API]
+
+    D --> J[(SQLite Database)]
+    D --> K[Prometheus Metrics]
+
+    L[Docker Compose] --> D
+    M[Ubuntu Linux VM] --> L
+    N[Windows PowerShell SSH] --> M
+
+    O[Browser / Swagger UI] --> D
+```
+
 基于 **FastAPI + ONNX Runtime + Docker + SQLite + Prometheus** 的工业安全帽检测后端系统。
 
 本项目从安全帽检测场景出发，构建了一个面向边缘 AI 部署的后端服务。系统支持模型推理接口、设备管理、摄像头管理、告警记录、健康检查、监控指标暴露，并已完成 Docker、本地 Linux 虚拟机部署和 Windows SSH 远程操作部署流程。
