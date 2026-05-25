@@ -23,6 +23,26 @@ flowchart TD
 
     O[Browser / Swagger UI] --> D
 ```
+## Deployment Screenshots
+
+### Swagger API Documentation
+
+The FastAPI Swagger UI is available at `/docs`.
+
+![Swagger API Documentation](docs/images/swagger-docs.png)
+
+### Docker Compose Running Status
+
+The backend service can be started and managed with Docker Compose.
+
+![Docker Compose Status](docs/images/docker-compose-ps.png)
+
+### Health Check
+
+The `/health` endpoint confirms that the backend service is running correctly.
+
+![Health Check](docs/images/health-check.png)
+
 
 基于 **FastAPI + ONNX Runtime + Docker + SQLite + Prometheus** 的工业安全帽检测后端系统。
 
