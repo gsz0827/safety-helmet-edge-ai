@@ -2,7 +2,7 @@ device:
   device_id: edge_ai_001
 
 model:
-  model_path: runs/detect/helmet_final/weights/best.onnx
+  model_path: ml/models/best.onnx
   input_size: 640
   class_names:
     - helmet
