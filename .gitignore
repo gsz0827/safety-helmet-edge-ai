@@ -56,6 +56,11 @@ datasets/
 *.trt
 *.engine
 
+# Keep production ONNX model for backend demo
+!ml/
+!ml/models/
+!ml/models/best.onnx
+
 # Video / image outputs
 *.mp4
 *.avi
